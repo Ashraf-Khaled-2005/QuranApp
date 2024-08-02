@@ -1,6 +1,5 @@
 part of 'fetch_surahs_cubit.dart';
 
-@immutable
 sealed class FetchSurahsState {}
 
 final class FetchSurahsInitial extends FetchSurahsState {}

@@ -1,30 +1,33 @@
-import 'dart:developer';
-
+import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:quran/core/api_service.dart';
+import 'package:quran/core/errors/failures.dart';
 import 'package:quran/features/home/data/repo/Home_repo.dart';
 import 'package:quran/features/home/presentation/view_model/surah_model/surah_model.dart';
 
 // ignore: camel_case_types
 class HomeRepoImpl extends HomeRepo {
+  final ApiService apiService;
+
+  HomeRepoImpl({required this.apiService});
   @override
-  Future<List<SurahModel>> FetchAllSurah({required Dio dioo}) async {
-    final Dio dio = dioo;
+  Future<Either<Failure, List<SurahModel>>> FetchAllSurah() async {
     List<SurahModel> surahs = [];
     try {
-      Response response =
-          await dio.get('https://api.alquran.cloud/v1/quran/ar.alafasy');
-      List<dynamic> data = response.data['data']['surahs'];
+      Map<String, dynamic> response = await ApiService(Dio())
+          .get(endPoint: 'quran/ar.alafasy') as Map<String, dynamic>;
+      List<dynamic> data = response['data']['surahs'];
       for (int i = 0; i < data.length; i++) {
         SurahModel model = SurahModel.fromJson(data[i]);
         surahs.add(model);
       }
-    } on DioException catch (e) {
-      log('Dio error: $e');
+      return right(surahs);
     } catch (e) {
-      log('Error: $e');
+      if (e is DioException) {
+        left(ServerFailure.fromDioError(e));
+      }
+
+      return left(ServerFailure(e.toString()));
     }
-    log('done');
-    log('${surahs.length}');
-    return surahs;
   }
 }
